@@ -1,0 +1,208 @@
+import armas.*
+import armaduras.*
+import gladiadores.*
+import grupos.*
+import coliseo.*
+
+describe "Tests Gladiadores en el Coliseo" {
+
+    // Fixture (se recrea para cada test)
+    const espada = new ArmaDeFilo(filo=0.8, longitud=100)     // poder de ataque 80
+    const daga = new ArmaDeFilo(filo=0.5, longitud=20)        // poder de ataque 10
+    const maza = new ArmaContundente(peso=30)                 // poder de ataque 30
+    const mirmillon = new Mirmillon(fuerza=20, arma=espada, armadura=casco)    // ataque 100, defensa 25
+    const dimachaerus = new Dimachaerus(destreza=10, armas=[daga, maza])       // ataque 50, defensa 5
+
+    // ---------- ARMAS Y ARMADURAS ----------
+
+    test "1. Dado que una espada tiene filo 0.8 y longitud 100 cm, cuando se consulta su poder de ataque, entonces es 80 - puntosQueOtorga: 2" {
+        assert.equals(80, espada.poderDeAtaque())
+    }
+
+    test "2. Dado que una maza pesa 30, cuando se consulta su poder de ataque, entonces es 30 - puntosQueOtorga: 2" {
+        assert.equals(30, maza.poderDeAtaque())
+    }
+
+    test "3. Dado que un mirmillón usa casco, cuando se consultan los puntos de armadura del casco, entonces son 10 - puntosQueOtorga: 2" {
+        assert.equals(10, casco.puntosDeArmadura(mirmillon))
+    }
+
+    test "4. Dado que un mirmillón tiene destreza 15, cuando se consultan los puntos de armadura del escudo, entonces son 6.5 (5 más el 10% de la destreza) - puntosQueOtorga: 2" {
+        assert.equals(6.5, escudo.puntosDeArmadura(mirmillon))
+    }
+
+    // ---------- MIRMILLÓN ----------
+
+    test "5. Dado que un mirmillón de fuerza 20 usa una espada de poder 80, cuando se consulta su poder de ataque, entonces es 100 - puntosQueOtorga: 3" {
+        assert.equals(100, mirmillon.poderDeAtaque())
+    }
+
+    test "6. Dado que un mirmillón usa casco y tiene destreza 15, cuando se consulta su defensa, entonces es 25 - puntosQueOtorga: 3" {
+        assert.equals(25, mirmillon.defensa())
+    }
+
+    test "7. Dado que un mirmillón cambia su casco por un escudo, cuando se consulta su defensa, entonces es 21.5 (5 + 1.5 + 15) - puntosQueOtorga: 3" {
+        mirmillon.cambiarArmadura(escudo)
+        assert.equals(21.5, mirmillon.defensa())
+    }
+
+    test "8. Dado que un mirmillón de fuerza 20 cambia su espada por una maza de poder 30, cuando se consulta su poder de ataque, entonces es 50 - puntosQueOtorga: 3" {
+        mirmillon.cambiarArma(maza)
+        assert.equals(50, mirmillon.poderDeAtaque())
+    }
+
+    // ---------- DIMACHAERUS ----------
+
+    test "9. Dado que un dimachaerus de fuerza 10 tiene una daga (10) y una maza (30), cuando se consulta su poder de ataque, entonces es 50 - puntosQueOtorga: 3" {
+        assert.equals(50, dimachaerus.poderDeAtaque())
+    }
+
+    test "10. Dado que un dimachaerus tiene destreza 10, cuando se consulta su defensa, entonces es 5 (la mitad de su destreza) - puntosQueOtorga: 3" {
+        assert.equals(5, dimachaerus.defensa())
+    }
+
+    test "11. Dado que un dimachaerus tiene destreza 10, cuando ataca a un gladiador, entonces su destreza aumenta a 11 - puntosQueOtorga: 3" {
+        dimachaerus.atacar(mirmillon)
+        assert.equals(11, dimachaerus.destreza())
+    }
+
+    test "12. Dado que un dimachaerus con poder de ataque 50 agrega una espada (80), cuando se consulta su poder de ataque, entonces es 130 - puntosQueOtorga: 3" {
+        dimachaerus.agregarArma(espada)
+        assert.equals(130, dimachaerus.poderDeAtaque())
+    }
+
+    test "13. Dado que un dimachaerus con poder de ataque 50 se desprende de su maza (30), cuando se consulta su poder de ataque, entonces es 20 - puntosQueOtorga: 3" {
+        dimachaerus.quitarArma(maza)
+        assert.equals(20, dimachaerus.poderDeAtaque())
+    }
+
+    // ---------- ATAQUE Y PELEA ----------
+
+    test "14. Dado que un mirmillón (ataque 100) ataca a un dimachaerus (defensa 5) de 100 de vida, cuando se consulta la vida del dimachaerus, entonces es 5 - puntosQueOtorga: 3" {
+        mirmillon.atacar(dimachaerus)
+        assert.equals(5, dimachaerus.vida())
+    }
+
+    test "15. Dado que un dimachaerus sin armas (ataque 10) ataca a un mirmillón con defensa 25, cuando se consulta la vida del mirmillón, entonces sigue en 100 porque el daño nunca es negativo - puntosQueOtorga: 3" {
+        const dimachaerusDesarmado = new Dimachaerus(destreza=10)
+        dimachaerusDesarmado.atacar(mirmillon)
+        assert.equals(100, mirmillon.vida())
+    }
+
+    test "16. Dado que un dimachaerus con 5 de vida recibe otro ataque de 95 de daño, cuando se consulta su vida, entonces es 0 y no queda negativa - puntosQueOtorga: 3" {
+        mirmillon.atacar(dimachaerus)
+        mirmillon.atacar(dimachaerus)
+        assert.equals(0, dimachaerus.vida())
+    }
+
+    test "17. Dado que un mirmillón pelea con un dimachaerus que sobrevive al ataque, cuando se consulta la vida del mirmillón, entonces es 75 porque recibió el contraataque de 25 - puntosQueOtorga: 4" {
+        mirmillon.pelear(dimachaerus)
+        assert.equals(75, mirmillon.vida())
+    }
+
+    test "18. Dado que un mirmillón pelea con un dimachaerus de defensa 0 y ataque 110 que queda sin vida con el primer ataque, cuando se consulta la vida del mirmillón, entonces sigue en 100 porque el derrotado no contraataca - puntosQueOtorga: 4" {
+        const dimachaerusFragil = new Dimachaerus(destreza=0, armas=[new ArmaContundente(peso=100)])
+        mirmillon.pelear(dimachaerusFragil)
+        assert.equals(100, mirmillon.vida())
+    }
+
+    // ---------- GRUPOS ----------
+
+    test "19. Dado que un grupo tiene un mirmillón de fuerza 20 y un dimachaerus de fuerza 10 con vida, cuando se consulta su campeón, entonces es el mirmillón - puntosQueOtorga: 3" {
+        const grupo = new Grupo(nombre="Leones", miembros=[mirmillon, dimachaerus])
+        assert.equals(mirmillon, grupo.campeon())
+    }
+
+    test "20. Dado que en un grupo el gladiador más fuerte quedó sin vida, cuando se consulta su campeón, entonces es el más fuerte que aún puede combatir - puntosQueOtorga: 3" {
+        const grupo = new Grupo(nombre="Leones", miembros=[mirmillon, dimachaerus])
+        mirmillon.recibirDanio(100)
+        assert.equals(dimachaerus, grupo.campeon())
+    }
+
+    test "21. Dado que un grupo tiene 1 miembro, cuando se le agrega un gladiador, entonces tiene 2 miembros - puntosQueOtorga: 3" {
+        const grupo = new Grupo(nombre="Leones", miembros=[mirmillon])
+        grupo.agregar(dimachaerus)
+        assert.equals(2, grupo.cantidadDeMiembros())
+    }
+
+    test "22. Dado que un grupo tiene 2 miembros, cuando se quita a uno, entonces queda con 1 miembro - puntosQueOtorga: 3" {
+        const grupo = new Grupo(nombre="Leones", miembros=[mirmillon, dimachaerus])
+        grupo.quitar(dimachaerus)
+        assert.equals(1, grupo.cantidadDeMiembros())
+    }
+
+    test "23. Dado que un mirmillón se junta con otro gladiador para armar un grupo, cuando se consulta el nombre del grupo, entonces es mirmillolandia - puntosQueOtorga: 3" {
+        const grupo = mirmillon.armarGrupoCon(dimachaerus)
+        assert.equals("mirmillolandia", grupo.nombre())
+    }
+
+    test "24. Dado que un dimachaerus (ataque 50) se junta con otro (ataque 40) para armar un grupo, cuando se consulta el nombre del grupo, entonces es D-90 - puntosQueOtorga: 3" {
+        const colega = new Dimachaerus(destreza=5, armas=[maza])
+        const grupo = dimachaerus.armarGrupoCon(colega)
+        assert.equals("D-90", grupo.nombre())
+    }
+
+    test "25. Dado que dos gladiadores se juntan para armar un grupo, cuando se consulta la cantidad de miembros, entonces son 2 - puntosQueOtorga: 3" {
+        const grupo = mirmillon.armarGrupoCon(dimachaerus)
+        assert.equals(2, grupo.cantidadDeMiembros())
+    }
+
+    // ---------- COLISEO ----------
+
+    test "26. Dado que un grupo con un mirmillón (ataque 100) combate contra un grupo con un dimachaerus de 100 de vida, cuando termina el combate, entonces el dimachaerus quedó sin vida - puntosQueOtorga: 4" {
+        const grupoA = new Grupo(nombre="A", miembros=[mirmillon])
+        const grupoB = new Grupo(nombre="B", miembros=[dimachaerus])
+        coliseo.organizarCombate(grupoA, grupoB)
+        assert.equals(0, dimachaerus.vida())
+    }
+
+    test "27. Dado que dos gladiadores que sobreviven los 3 rounds combaten (el primero daña 15, 14.5 y 14), cuando termina el combate, entonces al segundo le quedan 56.5 de vida - puntosQueOtorga: 4" {
+        const mirmillonDebil = new Mirmillon(fuerza=10, arma=new ArmaContundente(peso=10), armadura=casco)
+        const dimachaerusDesarmado = new Dimachaerus(destreza=10)
+        coliseo.organizarCombate(new Grupo(nombre="A", miembros=[mirmillonDebil]), new Grupo(nombre="B", miembros=[dimachaerusDesarmado]))
+        assert.equals(56.5, dimachaerusDesarmado.vida())
+    }
+
+    test "28. Dado que un grupo combate en el coliseo, cuando termina el combate, entonces registra 1 pelea - puntosQueOtorga: 3" {
+        const grupoA = new Grupo(nombre="A", miembros=[mirmillon])
+        const grupoB = new Grupo(nombre="B", miembros=[dimachaerus])
+        coliseo.organizarCombate(grupoA, grupoB)
+        assert.equals(1, grupoA.cantidadDePeleas())
+    }
+
+    test "29. Dado que un grupo es el rival en un combate del coliseo, cuando termina el combate, entonces también registra 1 pelea - puntosQueOtorga: 3" {
+        const grupoA = new Grupo(nombre="A", miembros=[mirmillon])
+        const grupoB = new Grupo(nombre="B", miembros=[dimachaerus])
+        coliseo.organizarCombate(grupoA, grupoB)
+        assert.equals(1, grupoB.cantidadDePeleas())
+    }
+
+    test "30. Dado que un grupo con un mirmillón combate contra un dimachaerus suelto de 100 de vida, cuando termina el combate, entonces el dimachaerus quedó sin vida - puntosQueOtorga: 3" {
+        const grupoA = new Grupo(nombre="A", miembros=[mirmillon])
+        coliseo.organizarCombate(grupoA, dimachaerus)
+        assert.equals(0, dimachaerus.vida())
+    }
+
+    test "31. Dado que el campeón de un grupo cae en el primer round, cuando se disputa el segundo round, entonces pelea el siguiente más fuerte y también queda sin vida - puntosQueOtorga: 4" {
+        const atacante = new Dimachaerus(destreza=0, armas=[new ArmaContundente(peso=200)])
+        const campeon = new Mirmillon(fuerza=20, arma=espada, armadura=casco)
+        const suplente = new Mirmillon(fuerza=10, arma=maza, armadura=casco)
+        coliseo.organizarCombate(atacante, new Grupo(nombre="A", miembros=[campeon, suplente]))
+        assert.equals(0, suplente.vida())
+    }
+
+    test "32. Dado que un gladiador suelto perdió 60 de vida, cuando el coliseo lo cura, entonces recupera sus 100 de vida - puntosQueOtorga: 3" {
+        dimachaerus.recibirDanio(60)
+        coliseo.curar(dimachaerus)
+        assert.equals(100, dimachaerus.vida())
+    }
+
+    test "33. Dado que dos miembros de un grupo perdieron vida, cuando el coliseo cura al grupo, entonces ambos recuperan sus 100 de vida (suman 200) - puntosQueOtorga: 3" {
+        const grupo = new Grupo(nombre="Leones", miembros=[mirmillon, dimachaerus])
+        mirmillon.recibirDanio(30)
+        dimachaerus.recibirDanio(60)
+        coliseo.curar(grupo)
+        assert.equals(200, mirmillon.vida() + dimachaerus.vida())
+    }
+
+}
